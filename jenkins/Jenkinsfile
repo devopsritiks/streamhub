@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+    parameters {
+        booleanParam(name: 'ENABLE_MONITORING', defaultValue: false, description: 'Enable Prometheus and Grafana monitoring')
+    }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+        DOCKERHUB_USERNAME = '<your-dockerhub-username>' // Replace with your username
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/<your-username>/StreamHub.git' // Replace with your repo
+            }
+        }
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Frontend') {
+                    steps {
+                        sh 'cd app/frontend && docker build -t ${DOCKERHUB_USERNAME}/streamhub-frontend:latest .'
+                    }
+                }
+                stage('Build Backend') {
+                    steps {
+                        sh 'cd app/backend && docker build -t ${DOCKERHUB_USERNAME}/streamhub-backend:latest .'
+                    }
+                }
+            }
+        }
+        stage('Push Docker Images') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_USERNAME --password-stdin'
+                sh 'docker push ${DOCKERHUB_USERNAME}/streamhub-frontend:latest'
+                sh 'docker push ${DOCKERHUB_USERNAME}/streamhub-backend:latest'
+            }
+        }
+        stage('Provision Infrastructure') {
+            steps {
+                sh 'cd infrastructure && terraform init'
+                sh 'cd infrastructure && terraform apply -auto-approve'
+            }
+        }
+        stage('Deploy to EKS') {
+            steps {
+                sh 'aws eks update-kubeconfig --name streamhub-cluster --region us-east-1'
+                sh 'cd ansible && ansible-playbook -i inventory.yml deploy.yml'
+            }
+        }
+        stage('Deploy Monitoring') {
+            when {
+                expression { params.ENABLE_MONITORING }
+            }
+            steps {
+                sh 'curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash' // Install Helm
+                sh 'bash monitoring/install-monitoring.sh'
+            }
+        }
+        stage('Get Public Access') {
+            steps {
+                script {
+                    sh 'sleep 60' // Wait for LoadBalancer
+                    def appUrl = sh(script: "kubectl get svc streamhub-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'", returnStdout: true).trim()
+                    echo "Application is accessible at: http://${appUrl}:80"
+                    env.APP_URL = "http://${appUrl}:80"
+                    if (params.ENABLE_MONITORING) {
+                        def grafanaUrl = sh(script: "kubectl get svc monitoring-stack-grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'", returnStdout: true).trim()
+                        echo "Grafana is accessible at: http://${grafanaUrl}:80 (admin/admin123)"
+                        env.GRAFANA_URL = "http://${grafanaUrl}:80"
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline completed!'
+        }
+        success {
+            echo "StreamHub deployed at: ${env.APP_URL}"
+            if (params.ENABLE_MONITORING) {
+                echo "Monitoring available at: ${env.GRAFANA_URL}"
+            }
+        }
+        failure {
+            echo 'Pipeline failed. Check logs.'
+        }
+    }
+}

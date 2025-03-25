@@ -1,0 +1,22 @@
+# Custom values for kube-prometheus-stack Helm chart
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "200m"
+        memory: "512Mi"
+    retention: "1d" # Short retention for demo
+grafana:
+  adminPassword: "admin123" # Change this in production
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  service:
+    type: LoadBalancer # Expose Grafana externally

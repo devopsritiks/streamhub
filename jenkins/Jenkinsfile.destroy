@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')     // Add in Jenkins UI
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key') // Add in Jenkins UI
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/<your-username>/StreamHub.git' // Replace with your repo
+            }
+        }
+        stage('Destroy Infrastructure') {
+            steps {
+                sh 'cd infrastructure && terraform init'
+                sh 'cd infrastructure && terraform destroy -auto-approve'
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Destroy pipeline completed!'
+        }
+        success {
+            echo 'Infrastructure destroyed successfully.'
+        }
+        failure {
+            echo 'Failed to destroy infrastructure. Check logs.'
+        }
+    }
+}

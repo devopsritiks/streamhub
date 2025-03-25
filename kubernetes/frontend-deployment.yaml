@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamhub-frontend
+  labels:
+    app: streamhub-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: streamhub-frontend
+  template:
+    metadata:
+      labels:
+        app: streamhub-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: <your-dockerhub-username>/streamhub-frontend:latest # Replace with your Docker Hub image
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"

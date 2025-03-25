@@ -1,0 +1,7 @@
+---
+- name: Deploy StreamHub to EKS
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - app

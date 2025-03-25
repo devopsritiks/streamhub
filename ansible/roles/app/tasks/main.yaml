@@ -1,0 +1,37 @@
+---
+- name: Ensure kubectl is configured for EKS
+  shell: aws eks update-kubeconfig --name streamhub-cluster --region us-east-1
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+  changed_when: false
+
+- name: Apply frontend deployment
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../kubernetes/frontend-deployment.yaml"
+    kubeconfig: "~/.kube/config"
+
+- name: Apply frontend service
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../kubernetes/frontend-service.yaml"
+    kubeconfig: "~/.kube/config"
+
+- name: Apply backend deployment
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../kubernetes/backend-deployment.yaml"
+    kubeconfig: "~/.kube/config"
+
+- name: Apply backend service
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../kubernetes/backend-service.yaml"
+    kubeconfig: "~/.kube/config"
+
+- name: Apply HPA
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../kubernetes/hpa.yaml"
+    kubeconfig: "~/.kube/config"

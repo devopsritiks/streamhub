@@ -1,0 +1,41 @@
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.content {
+  display: flex;
+  gap: 20px;
+}
+
+.video-player {
+  flex: 2;
+}
+
+.video-list {
+  flex: 1;
+}
+
+.video-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.video-list li {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #f5f5f5;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.video-list li:hover,
+.video-list li.active {
+  background-color: #ddd;
+}

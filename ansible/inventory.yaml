@@ -1,0 +1,5 @@
+plugin: amazon.aws.aws_eks
+aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+region: us-east-1
+cluster_name: streamhub-cluster
