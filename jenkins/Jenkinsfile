@@ -31,9 +31,11 @@ pipeline {
         }
         stage('Push Docker Images') {
             steps {
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_USERNAME --password-stdin'
-                sh 'docker push ${DOCKERHUB_USERNAME}/streamhub-frontend:latest'
-                sh 'docker push ${DOCKERHUB_USERNAME}/streamhub-backend:latest'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                  sh 'echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin'
+                  sh 'docker push $DOCKERHUB_USERNAME/streamhub-frontend:latest'
+                  sh 'docker push $DOCKERHUB_USERNAME/streamhub-backend:latest'
+               }
             }
         }
         stage('Provision Infrastructure') {
